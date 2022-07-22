@@ -16,6 +16,10 @@ type CGIResponse struct {
 	Content string `json:"content"`
 }
 
+type HealthCheckResponse struct {
+	Status int `json:"status"`
+}
+
 func respHandler(code int, msg string, results ...interface{}) (r *Response) {
 	r = &Response{
 		Code:   code,

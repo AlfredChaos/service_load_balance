@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"myslb/constant"
 	"myslb/response"
 	"net/http"
 	"reflect"
@@ -31,6 +32,13 @@ func Handler(r Requester, c *gin.Context) {
 type GetCGIHandler struct {}
 
 func (r *GetCGIHandler) Request() *response.Response {
-	resp := &response.CGIResponse{Content: "GOCGI"}
+	resp := &response.CGIResponse{Content: "I am host3: 127.0.0.1:33803"}
+	return response.SuccessResp(resp)
+}
+
+type HealthCheckHandler struct {}
+
+func (r *HealthCheckHandler) Request() *response.Response {
+	resp := &response.HealthCheckResponse{Status: constant.ServiceActive}
 	return response.SuccessResp(resp)
 }

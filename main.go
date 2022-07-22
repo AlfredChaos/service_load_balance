@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"myslb/loadbalance"
 	"myslb/requester"
 	"net/http"
 	"net/http/httputil"
@@ -10,7 +11,7 @@ import (
 
 func main() {
 	r := InitRouters()
-	if err := r.Run(":3380"); err != nil {
+	if err := r.Run(":33803"); err != nil {
 		fmt.Println("run gin app error")
 		fmt.Println(err)
 	}
@@ -21,8 +22,14 @@ func InitRouters() *gin.Engine {
 	ver := fmt.Sprintf("/%s", "v1")
 	routerGroupVer := router.Group(ver)
 
-	//routerGroupVer.GET("/cgi", Handler(&requester.GetCGIHandler{}))
-	routerGroupVer.GET("/:name", ReverseProxy())
+	// init loadbalance
+	//rr := &loadbalance.RoundRobin{ServerPool: loadbalance.NewRRPool()}
+	//fmt.Printf("%+v\n", rr.ServerPool)
+
+	routerGroupVer.GET("/cgi", Handler(&requester.GetCGIHandler{}))
+	routerGroupVer.GET("/healthCheck", Handler(&requester.HealthCheckHandler{}))
+	//routerGroupVer.GET("/:name", ReverseProxy(rr))
+
 	return router
 }
 
@@ -32,15 +39,15 @@ func Handler(r requester.Requester) gin.HandlerFunc {
 	}
 }
 
-func ReverseProxy() gin.HandlerFunc {
-	target := "127.0.0.1:33802"
+func ReverseProxy(rr *loadbalance.RoundRobin) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		server, _ := rr.GetNextPeer()
 		director := func(req *http.Request) {
 			req.URL.Scheme = "http"
-			req.URL.Host = target
-			req.Host = target
+			req.URL.Host = server
+			req.Host = server
 		}
-		fmt.Println("Proxy here")
+		fmt.Printf("Proxy %s\n", server)
 		proxy := &httputil.ReverseProxy{Director: director}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
